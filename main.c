@@ -1,5 +1,10 @@
 #include <gtk/gtk.h>
 
+#include "system_info.h"
+#include "processes.h"
+#include "resources.h"
+#include "file_systems.h"
+
 /*
  * Some dummy functions to showcase button signal handling
  */
@@ -20,8 +25,8 @@ void print_file_systems() {
 }
 
 void on_stack_switched(GtkStack *stack) {
-    const gchar *visible_child_name = gtk_stack_get_visible_child_name(stack);
-    g_print("Switched to Page: %s\n", visible_child_name);
+  const gchar *visible_child_name = gtk_stack_get_visible_child_name(stack);
+  g_print("Switched to Page: %s\n", visible_child_name);
 }
 /* Dummy functions */
 
