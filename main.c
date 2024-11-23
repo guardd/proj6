@@ -13,7 +13,7 @@ void print_system() {
 }
 
 void print_processes() {
-  g_print("Processes Button has been clicked!\n");
+  g_print("End Process Button has been clicked!\n");
 }
 
 void print_resources() {
@@ -36,7 +36,7 @@ void on_stack_switched(GtkStack *stack) {
  */
 int main(int argc, char **argv) {
   GtkBuilder *builder;
-  GObject *window;
+  GtkWidget *window;
   GObject *button;
   GError *error = NULL;
 
@@ -49,19 +49,21 @@ int main(int argc, char **argv) {
     g_clear_error(&error);
     return -1;
   }
+  /* Init the UI elements for the processes page */
+  p_init_ui(builder);
 
   /* Connect signal handlers to stack (page) switches */
   GtkStack *stack = GTK_STACK(gtk_builder_get_object(builder, "stack"));
   g_signal_connect(stack, "notify::visible-child-name", G_CALLBACK(on_stack_switched), NULL);
 
   /* Connect signal handlers to widgets */
-  window = gtk_builder_get_object(builder, "window");
+  window = GTK_WIDGET(gtk_builder_get_object(builder, "window"));
   g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
 
   button = gtk_builder_get_object(builder, "system_button");
   g_signal_connect(button, "clicked", G_CALLBACK(print_system), NULL);
 
-  button = gtk_builder_get_object(builder, "processes_button");
+  button = gtk_builder_get_object(builder, "p_end_process_button");
   g_signal_connect(button, "clicked", G_CALLBACK(print_processes), NULL);
 
   button = gtk_builder_get_object(builder, "resources_button");
@@ -70,6 +72,17 @@ int main(int argc, char **argv) {
   button = gtk_builder_get_object(builder, "file_systems_button");
   g_signal_connect(button, "clicked", G_CALLBACK(print_file_systems), NULL);
 
+  /* Test code for appending rows to process view */
+  GtkTreeIter iter;
+  gtk_tree_store_append(p_tree_store, &iter, NULL);
+  gtk_tree_store_set(p_tree_store, &iter, 0, "process name!", -1);
+  gtk_tree_store_set(p_tree_store, &iter, 1, "status!", -1);
+  gtk_tree_store_set(p_tree_store, &iter, 2, "\% cpu!", -1);
+  gtk_tree_store_set(p_tree_store, &iter, 3, "pid!", -1);
+  gtk_tree_store_set(p_tree_store, &iter, 4, "memory!", -1);
+  /* Test code for appending rows to process view */
+
+  gtk_widget_show_all(window);
   gtk_main();
 
   return 0;
