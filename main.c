@@ -12,8 +12,8 @@ void print_system() {
   g_print("System Button has been clicked!\n");
 }
 
-void print_processes() {
-  g_print("End Process Button has been clicked!\n");
+void clear_tree_store() {
+  gtk_tree_store_clear(p_tree_store); // temp -- remove later
 }
 
 void print_resources() {
@@ -27,6 +27,7 @@ void print_file_systems() {
 void on_stack_switched(GtkStack *stack) {
   const gchar *visible_child_name = gtk_stack_get_visible_child_name(stack);
   g_print("Switched to Page: %s\n", visible_child_name);
+  display_processes();
 }
 /* Dummy functions */
 
@@ -63,24 +64,20 @@ int main(int argc, char **argv) {
   button = gtk_builder_get_object(builder, "system_button");
   g_signal_connect(button, "clicked", G_CALLBACK(print_system), NULL);
 
-  button = gtk_builder_get_object(builder, "p_end_process_button");
-  g_signal_connect(button, "clicked", G_CALLBACK(print_processes), NULL);
-
   button = gtk_builder_get_object(builder, "resources_button");
   g_signal_connect(button, "clicked", G_CALLBACK(print_resources), NULL);
 
   button = gtk_builder_get_object(builder, "file_systems_button");
   g_signal_connect(button, "clicked", G_CALLBACK(print_file_systems), NULL);
 
-  /* Test code for appending rows to process view */
-  GtkTreeIter iter;
-  gtk_tree_store_append(p_tree_store, &iter, NULL);
-  gtk_tree_store_set(p_tree_store, &iter, 0, "process name!", -1);
-  gtk_tree_store_set(p_tree_store, &iter, 1, "status!", -1);
-  gtk_tree_store_set(p_tree_store, &iter, 2, "\% cpu!", -1);
-  gtk_tree_store_set(p_tree_store, &iter, 3, "pid!", -1);
-  gtk_tree_store_set(p_tree_store, &iter, 4, "memory!", -1);
-  /* Test code for appending rows to process view */
+  button = gtk_builder_get_object(builder, "p_end_process_button");
+  g_signal_connect(button, "clicked", G_CALLBACK(clear_tree_store), NULL);
+
+  button = gtk_builder_get_object(builder, "p_refresh_process_button");
+  g_signal_connect(button, "clicked", G_CALLBACK(display_processes), NULL);
+
+
+  g_signal_connect(p_tree_view, "button-press-event", G_CALLBACK(on_process_actions_button_press), NULL);
 
   gtk_widget_show_all(window);
   gtk_main();

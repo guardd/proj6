@@ -31,4 +31,4 @@ task-manager: task-manager.c
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 clean:
-	rm -f task-manager task-manager-app *.o
+	rm -f task-manager task-manager-app *.o ./tmp/*

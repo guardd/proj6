@@ -1,0 +1,23 @@
+#!/bin/bash
+
+if [[ $# -ne 1 ]]; then
+  echo "error"
+  exit -1
+fi
+
+mkdir -p ./tmp
+
+case "$1" in
+  -a)
+    ps -eo pid,ppid,comm,user,stat,vsz,rss,time,%cpu,%mem,lstart | tr -s ' ' | tail -n +2 > ./tmp/a.txt
+    ;;
+  -u)
+    ps -xo pid,ppid,comm,user,stat,vsz,rss,time,%cpu,%mem,lstart | tr -s ' ' | tail -n +2 > ./tmp/u.txt
+    ;;
+  *)
+    exit -1
+    echo "error"
+    ;;
+esac
+
+exit 0

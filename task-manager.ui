@@ -266,7 +266,7 @@
                             <property name="model">p_tree_store</property>
                             <property name="search-column">0</property>
                             <child internal-child="selection">
-                              <object class="GtkTreeSelection"/>
+                              <object class="GtkTreeSelection" id="p_selection"/>
                             </child>
                             <child>
                               <object class="GtkTreeViewColumn" id="p_name_col">
@@ -313,6 +313,20 @@
                       </object>
                     </child>
                   </object>
+                </child>
+                <child>
+                  <object class="GtkButton" id="p_refresh_process_button">
+                    <property name="label" translatable="yes">Refresh List</property>
+                    <property name="width-request">200</property>
+                    <property name="height-request">30</property>
+                    <property name="visible">True</property>
+                    <property name="can-focus">True</property>
+                    <property name="receives-default">True</property>
+                    <property name="border-width">5</property>
+                  </object>
+                  <packing>
+                    <property name="y">700</property>
+                  </packing>
                 </child>
               </object>
               <packing>

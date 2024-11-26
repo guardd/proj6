@@ -18,11 +18,9 @@ typedef enum p_state {
   IDLE        = 'I',
   PARKED      = 'P'
 } p_state;
-/* p_state */
 
 /* 
- * Use the following command in execlp to parse from its output:
- * ps -eo pid,ppid,comm,user,stat,vsz,rss,time,lstart,%cpu,%mem
+ * process struct to hold individual process information
  */
 typedef struct process {
   int pid;
@@ -33,9 +31,9 @@ typedef struct process {
   int virtual_memory;
   int resident_memory;
   char* cpu_time;
-  char* start_date;
   float percent_cpu;
   float percent_mem;
+  char* start_date;
   struct process *parent;
   struct process **children;
 } process;
@@ -55,7 +53,18 @@ extern GtkCellRenderer *p_cpu_percent_col_renderer;
 extern GtkCellRenderer *p_id_col_renderer;
 extern GtkCellRenderer *p_memory_col_renderer;
 
+/* Other globals */
+extern struct process **current_processes;
+
+/* Function headers */
 void p_init_ui(GtkBuilder *builder);
+void refresh_current_processes(char mode); // 'a' for all, 'u' for user
+void refresh_process_file(char mode);
+void print_processes();
+void display_processes();
+void on_menu_item_activated(gpointer user_data);
+void show_process_actions(GdkEventButton *event);
+void on_process_actions_button_press(GtkWidget *tree_view, GdkEventButton *event);
 
 #endif // PROCESSES_H
 
