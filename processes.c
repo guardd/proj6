@@ -243,6 +243,9 @@ int get_selected_process_id() {
       // Extract data from the selected row
       gtk_tree_model_get(model, &iter, 0, &process_name, 1, &process_state,
                          2, &process_cpu, 3, &process_id, 4, &process_mem, -1);
+  } else {
+    printf("Nothing is selected!\n");
+    return -1;
   }
   int pid = atoi((char*) process_id);
 
@@ -266,6 +269,9 @@ void continue_process() {
 
 void kill_process() {
   int prod_id = get_selected_process_id();
+  if (prod_id < 0) {
+    return;
+  }
   printf("Killing a process: %d!\n", prod_id);
   char prod_id_str[16];
   snprintf(prod_id_str, sizeof(prod_id_str), "%d", prod_id);

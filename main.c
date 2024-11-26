@@ -71,7 +71,7 @@ int main(int argc, char **argv) {
   g_signal_connect(button, "clicked", G_CALLBACK(print_file_systems), NULL);
 
   button = gtk_builder_get_object(builder, "p_end_process_button");
-  g_signal_connect(button, "clicked", G_CALLBACK(clear_tree_store), NULL);
+  g_signal_connect(button, "clicked", G_CALLBACK(kill_process), NULL);
 
   button = gtk_builder_get_object(builder, "p_refresh_process_button");
   g_signal_connect(button, "clicked", G_CALLBACK(display_processes), NULL);

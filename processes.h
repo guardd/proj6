@@ -65,6 +65,7 @@ void display_processes();
 void on_menu_item_activated(gpointer user_data);
 void show_process_actions(GdkEventButton *event);
 void on_process_actions_button_press(GtkWidget *tree_view, GdkEventButton *event);
+void kill_process();
 
 #endif // PROCESSES_H
 
