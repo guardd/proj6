@@ -12,6 +12,7 @@ GtkBuilder *builder;
  * Some dummy functions to showcase button signal handling
  */
 void print_system() {
+  update_system_info();
   g_print("System Button has been clicked!\n");
 }
 
@@ -39,6 +40,7 @@ void on_stack_switched(GtkStack *stack) {
 
   if (strcmp(visible_child_name, "System") == 0) {
     // Update the menu_bar to have the 'System' options
+    update_system_info(); 
     // TODO
   } else if (strcmp(visible_child_name, "Processes") == 0) {
     display_processes();
@@ -71,6 +73,8 @@ int main(int argc, char **argv) {
     g_clear_error(&error);
     return -1;
   }
+
+  init_system_info(builder);
   /* Init the UI elements for the processes page */
   p_init_ui(builder);
 
@@ -81,6 +85,7 @@ int main(int argc, char **argv) {
   /* Connect signal handlers to widgets */
   window = GTK_WIDGET(gtk_builder_get_object(builder, "window"));
   g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
+  g_signal_connect(window, "destroy", G_CALLBACK(cleanup_system_info), NULL);
 
   button = gtk_builder_get_object(builder, "system_button");
   g_signal_connect(button, "clicked", G_CALLBACK(print_system), NULL);
