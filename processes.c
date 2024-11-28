@@ -28,6 +28,8 @@ GtkCellRenderer *p_id_col_renderer;
 GtkCellRenderer *p_memory_col_renderer;
 
 process **current_processes;
+char process_display_mode = 'u';
+char process_display_view = 't';
 
 char* get_process_state_string(p_state state) {
   switch (state) {
@@ -182,8 +184,6 @@ void refresh_current_processes(char mode) {
     proc->percent_cpu = atof(buf[8]);
     proc->percent_mem = atof(buf[9]);
     proc->start_date = strdup(start_date);
-    proc->parent = NULL;
-    proc->children = NULL;
 
     // Set proc to correct location in current_processes & inc proc_count
     current_processes[proc_count++] = proc;
@@ -201,31 +201,74 @@ void refresh_current_processes(char mode) {
 /* void refresh_current_processes(char mode) */
 
 /*
- * Displays the currently running processes in a table view
+ * Displays the currently running processes in a table (t) or Tree (T) view
  */
 void display_processes() {
-  refresh_current_processes('a');
+  refresh_current_processes(process_display_mode);
   // Clear the existing tree store
   gtk_tree_store_clear(p_tree_store);
 
-  GtkTreeIter iter;
-  // Append rows as needed from current_processes
-  int i = 0;
-  while (current_processes[i] != NULL) {
-    process *proc = current_processes[i];
-    char perc_cpu[16];
-    char proc_id[16];
-    char proc_mem[16];
-    snprintf(perc_cpu, sizeof(perc_cpu), "%.2f%%", proc->percent_cpu);
-    snprintf(proc_id, sizeof(perc_cpu), "%d", proc->pid);
-    snprintf(proc_mem, sizeof(perc_cpu), "%.2f MiB", (float) proc->resident_memory / (1024.0));
-    gtk_tree_store_append(p_tree_store, &iter, NULL);
-    gtk_tree_store_set(p_tree_store, &iter, 0, proc->name,
-                                            1, get_process_state_string(proc->state),
-                                            2, perc_cpu,
-                                            3, proc_id,
-                                            4, proc_mem, -1);
-    i++;
+  if (process_display_view == 't') { // table view
+    GtkTreeIter iter;
+    // Append rows as needed from current_processes
+    int i = 0;
+    while (current_processes[i] != NULL) {
+      process *proc = current_processes[i];
+      char perc_cpu[16];
+      char proc_id[16];
+      char proc_mem[16];
+      snprintf(perc_cpu, sizeof(perc_cpu), "%.2f%%", proc->percent_cpu);
+      snprintf(proc_id, sizeof(perc_cpu), "%d", proc->pid);
+      snprintf(proc_mem, sizeof(perc_cpu), "%.2f MiB", (float) proc->resident_memory / (1024.0));
+      gtk_tree_store_append(p_tree_store, &iter, NULL);
+      gtk_tree_store_set(p_tree_store, &iter, 0, proc->name,
+                                              1, get_process_state_string(proc->state),
+                                              2, perc_cpu,
+                                              3, proc_id,
+                                              4, proc_mem, -1);
+      i++;
+    }
+  } else if (process_display_view == 'T') { // Tree view
+    // Map from PID to Gtk Iters in a hash table
+    GHashTable *pid_to_iter = g_hash_table_new(g_int_hash, g_int_equal);
+    int i = 0;
+    while (current_processes[i] != NULL) {
+      process *proc = current_processes[i];
+      char perc_cpu[16];
+      char proc_id[16];
+      char proc_mem[16];
+      snprintf(perc_cpu, sizeof(perc_cpu), "%.2f%%", proc->percent_cpu);
+      snprintf(proc_id, sizeof(proc_id), "%d", proc->pid);
+      snprintf(proc_mem, sizeof(proc_mem), "%.2f MiB", (float)proc->resident_memory / (1024.0));
+
+      GtkTreeIter *parent = NULL;
+
+      // If the process has a parent, find its GtkTreeIter in the hash table
+      if (proc->ppid != 0) { // Child process
+        GtkTreeIter *parent_lookup = g_hash_table_lookup(pid_to_iter, &proc->ppid);
+        if (parent_lookup) {
+          parent = parent_lookup;
+        }
+      }
+
+      // Append the current process to the TreeStore
+      GtkTreeIter *current_iter = g_new(GtkTreeIter, 1);
+      gtk_tree_store_append(p_tree_store, current_iter, parent); // NULL parent at root
+      gtk_tree_store_set(p_tree_store, current_iter,
+                          0, proc->name,
+                          1, get_process_state_string(proc->state),
+                          2, perc_cpu,
+                          3, proc_id,
+                          4, proc_mem,
+                          -1);
+
+      // Add the current processes iter to the hash table
+      g_hash_table_insert(pid_to_iter, &proc->pid, current_iter);
+
+      i++;
+    }
+    g_hash_table_destroy(pid_to_iter);
+    gtk_tree_view_expand_all(GTK_TREE_VIEW(p_tree_view));
   }
 }
 /* void display_processes() */
@@ -290,6 +333,7 @@ void kill_process() {
   } else {
     waitpid(pid, NULL, 0);
   }
+  display_processes();
 }
 
 void show_memory_maps() {
@@ -298,6 +342,10 @@ void show_memory_maps() {
 
 void show_open_files() {
   g_print("Showing open files: %d!\n", get_selected_process_id());
+}
+
+void show_properties() {
+  g_print("Showing properties: %d!\n", get_selected_process_id());
 }
 /* Functions for the process specific functions */
 
@@ -329,10 +377,77 @@ void show_process_actions(GdkEventButton *event) {
   g_signal_connect(menu_item, "activate", G_CALLBACK(show_open_files), NULL);
   gtk_menu_shell_append(GTK_MENU_SHELL(menu), menu_item);
 
+  menu_item = gtk_menu_item_new_with_label("Properties");
+  g_signal_connect(menu_item, "activate", G_CALLBACK(show_properties), NULL);
+  gtk_menu_shell_append(GTK_MENU_SHELL(menu), menu_item);
+
   gtk_widget_show_all(menu);
   gtk_menu_popup_at_pointer(GTK_MENU(menu), (GdkEvent*) event);
 }
 /* void show_process_actions(GdkEventButton *event) */
+
+/*
+ * Shows the correct view menu options when the page is switched to Processes
+ */
+void on_view_all() {
+  process_display_mode = 'a';
+  display_processes();
+}
+void on_view_user() {
+  process_display_mode = 'u';
+  display_processes();
+}
+void on_view_table() {
+  process_display_view = 't';
+  display_processes();
+}
+void on_view_tree() {
+  process_display_view = 'T';
+  display_processes();
+}
+void on_refresh_view() {
+  display_processes();
+}
+void destroy_widgets(GtkWidget *widget, gpointer user_data) {
+  (void) user_data;
+  gtk_widget_destroy(widget);
+}
+void show_processes_view_menu(GtkBuilder *builder) {
+  GtkMenuItem *view_menu_item = GTK_MENU_ITEM(gtk_builder_get_object(builder, "view_menu_bar"));
+  GtkWidget *menu_item;
+
+  // Clear the old view menu (if there are children)
+  GtkWidget *view_menu = gtk_menu_item_get_submenu(view_menu_item);
+  if (view_menu) {
+    gtk_container_foreach(GTK_CONTAINER(view_menu), destroy_widgets, NULL);
+  } else {
+    view_menu = gtk_menu_new();
+    gtk_menu_item_set_submenu(view_menu_item, view_menu);
+  }
+
+  menu_item = gtk_menu_item_new_with_label("All Processes");
+  g_signal_connect(menu_item, "activate", G_CALLBACK(on_view_all), NULL);
+  gtk_menu_shell_append(GTK_MENU_SHELL(view_menu), menu_item);
+
+  menu_item = gtk_menu_item_new_with_label("User Processes");
+  g_signal_connect(menu_item, "activate", G_CALLBACK(on_view_user), NULL);
+  gtk_menu_shell_append(GTK_MENU_SHELL(view_menu), menu_item);
+
+  menu_item = gtk_menu_item_new_with_label("Table");
+  g_signal_connect(menu_item, "activate", G_CALLBACK(on_view_table), NULL);
+  gtk_menu_shell_append(GTK_MENU_SHELL(view_menu), menu_item);
+
+  menu_item = gtk_menu_item_new_with_label("Tree");
+  g_signal_connect(menu_item, "activate", G_CALLBACK(on_view_tree), NULL);
+  gtk_menu_shell_append(GTK_MENU_SHELL(view_menu), menu_item);
+
+  menu_item = gtk_menu_item_new_with_label("Refresh");
+  g_signal_connect(menu_item, "activate", G_CALLBACK(on_refresh_view), NULL);
+  gtk_menu_shell_append(GTK_MENU_SHELL(view_menu), menu_item);
+
+  gtk_widget_show_all(view_menu);
+}
+/* void show_processes_view_menu(GtkBuilder *builder) */
 
 /*
  * Callback function for the process specific actions

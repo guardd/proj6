@@ -34,8 +34,6 @@ typedef struct process {
   float percent_cpu;
   float percent_mem;
   char* start_date;
-  struct process *parent;
-  struct process **children;
 } process;
 
 /* Gtk UI Globals for Processes Page */
@@ -55,14 +53,16 @@ extern GtkCellRenderer *p_memory_col_renderer;
 
 /* Other globals */
 extern struct process **current_processes;
+extern char process_display_mode; // 'a' for all, 'u' for user
+extern char process_display_view; // 't' for table, 'T' for Tree
 
 /* Function headers */
 void p_init_ui(GtkBuilder *builder);
-void refresh_current_processes(char mode); // 'a' for all, 'u' for user
+void show_processes_view_menu(GtkBuilder *builder);
+void refresh_current_processes(char mode);
 void refresh_process_file(char mode);
 void print_processes();
 void display_processes();
-void on_menu_item_activated(gpointer user_data);
 void show_process_actions(GdkEventButton *event);
 void on_process_actions_button_press(GtkWidget *tree_view, GdkEventButton *event);
 void kill_process();

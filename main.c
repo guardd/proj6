@@ -5,6 +5,9 @@
 #include "resources.h"
 #include "file_systems.h"
 
+// Global for builder
+GtkBuilder *builder;
+
 /*
  * Some dummy functions to showcase button signal handling
  */
@@ -23,20 +26,38 @@ void print_resources() {
 void print_file_systems() {
   g_print("File Systems Button has been clicked!\n");
 }
+/* Dummy functions */
 
+/*
+ * Callback function for when the page switches to any 1 of the 4
+ */
 void on_stack_switched(GtkStack *stack) {
   const gchar *visible_child_name = gtk_stack_get_visible_child_name(stack);
   g_print("Switched to Page: %s\n", visible_child_name);
-  display_processes();
+  
+  if (builder == NULL) return;
+
+  if (strcmp(visible_child_name, "System") == 0) {
+    // Update the menu_bar to have the 'System' options
+    // TODO
+  } else if (strcmp(visible_child_name, "Processes") == 0) {
+    display_processes();
+    // Update the view_menu_bar to have the 'Processes' options
+    show_processes_view_menu(builder);
+  } else if (strcmp(visible_child_name, "Resources") == 0) {
+    // Update the menu_bar to have the 'Resources' options
+    // TODO
+  } else if (strcmp(visible_child_name, "File Systems") == 0) {
+    // Update the menu_bar to have the 'File Systems' options
+    // TODO
+  }
 }
-/* Dummy functions */
 
 /*
  * The main function builds the GUIs from task-manager.ui
  * and signal handlers are connected to the appropriate widgets
  */
 int main(int argc, char **argv) {
-  GtkBuilder *builder;
   GtkWidget *window;
   GObject *button;
   GError *error = NULL;
@@ -72,10 +93,6 @@ int main(int argc, char **argv) {
 
   button = gtk_builder_get_object(builder, "p_end_process_button");
   g_signal_connect(button, "clicked", G_CALLBACK(kill_process), NULL);
-
-  button = gtk_builder_get_object(builder, "p_refresh_process_button");
-  g_signal_connect(button, "clicked", G_CALLBACK(display_processes), NULL);
-
 
   g_signal_connect(p_tree_view, "button-press-event", G_CALLBACK(on_process_actions_button_press), NULL);
 
