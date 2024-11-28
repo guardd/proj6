@@ -24,7 +24,7 @@ main.o: main.c
 	$(CC) $(CFLAGS) -c main.c
 
 task-manager-app: system_info.o processes.o resources.o file_systems.o main.o
-	$(CC) $(CFLAGS) -o task-manager-app system_info.o processes.o resources.o file_systems.o main.o $(LDFLAGS)
+	$(CC) $(CFLAGS) -o task-manager-app system_info.o processes.o resources.o file_systems.o main.o $(LDFLAGS) -lm
 
 
 task-manager: task-manager.c

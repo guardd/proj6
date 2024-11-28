@@ -371,15 +371,61 @@
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
                 <child>
-                  <object class="GtkButton" id="resources_button">
-                    <property name="label" translatable="yes">Resources Button</property>
-                    <property name="width-request">200</property>
-                    <property name="height-request">30</property>
+                  <object class="GtkFrame">
                     <property name="visible">True</property>
-                    <property name="can-focus">True</property>
-                    <property name="receives-default">True</property>
-                    <property name="border-width">5</property>
+                    <property name="can-focus">False</property>
+                    <property name="label">CPU History</property>
+                    <property name="width-request">550</property>
+                    <property name="height-request">200</property>
+                    <child>
+                      <object class="GtkDrawingArea" id="cpu_graph">
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                      </object>
+                    </child>
                   </object>
+                  <packing>
+                    <property name="x">20</property>
+                    <property name="y">20</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkFrame">
+                    <property name="visible">True</property>
+                    <property name="can-focus">False</property>
+                    <property name="label">Memory and Swap History</property>
+                    <property name="width-request">550</property>
+                    <property name="height-request">200</property>
+                    <child>
+                      <object class="GtkDrawingArea" id="memory_graph">
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                      </object>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="x">20</property>
+                    <property name="y">240</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkFrame">
+                    <property name="visible">True</property>
+                    <property name="can-focus">False</property>
+                    <property name="label">Network History</property>
+                    <property name="width-request">550</property>
+                    <property name="height-request">200</property>
+                    <child>
+                      <object class="GtkDrawingArea" id="network_graph">
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                      </object>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="x">20</property>
+                    <property name="y">460</property>
+                  </packing>
                 </child>
               </object>
               <packing>
