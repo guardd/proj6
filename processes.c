@@ -301,14 +301,71 @@ int get_selected_process_id() {
 
   return pid;
 }
+/* int get_selected_process_id() */
 
 void stop_process() {
-  g_print("Stopping a process: %d!\n", get_selected_process_id());
+  int prod_id = get_selected_process_id();
+  if (prod_id < 0) {
+    return;
+  }
+  printf("Stopping a process: %d!\n", prod_id);
+  char prod_id_str[16];
+  snprintf(prod_id_str, sizeof(prod_id_str), "%d", prod_id);
+  
+  pid_t pid = fork();
+  if (pid == -1) {
+    perror("fork");
+    return;
+  }
+  
+  if (pid == 0) {
+    if (execlp("kill", "kill", "-STOP", prod_id_str, NULL) == -1) {
+      perror("execlp");
+      exit(-1);
+    }
+  } else {
+    int status;
+    waitpid(pid, &status, 0);
+    if (status != 0) {
+      // TODO (make a custom dialogue box)
+      g_print("Error! Insufficient permissions, or process already ended!\n");
+    }
+  }
+  display_processes();
 }
+/* void stop_process() */
 
 void continue_process() {
-  g_print("Continuing a process: %d!\n", get_selected_process_id());
+  int prod_id = get_selected_process_id();
+  if (prod_id < 0) {
+    return;
+  }
+  printf("Continuing a process: %d!\n", prod_id);
+  char prod_id_str[16];
+  snprintf(prod_id_str, sizeof(prod_id_str), "%d", prod_id);
+  
+  pid_t pid = fork();
+  if (pid == -1) {
+    perror("fork");
+    return;
+  }
+  
+  if (pid == 0) {
+    if (execlp("kill", "kill", "-CONT", prod_id_str, NULL) == -1) {
+      perror("execlp");
+      exit(-1);
+    }
+  } else {
+    int status;
+    waitpid(pid, &status, 0);
+    if (status != 0) {
+      // TODO (make a custom dialogue box)
+      g_print("Error! Insufficient permissions, or process already ended!\n");
+    }
+  }
+  display_processes();
 }
+/* void continue_process() */
 
 void kill_process() {
   int prod_id = get_selected_process_id();
@@ -331,18 +388,26 @@ void kill_process() {
       exit(-1);
     }
   } else {
-    waitpid(pid, NULL, 0);
+    int status;
+    waitpid(pid, &status, 0);
+    if (status != 0) {
+      // TODO (make a custom dialogue box)
+      g_print("Error! Insufficient permissions, or process already ended!\n");
+    }
   }
   display_processes();
 }
+/* void kill_process() */
 
 void show_memory_maps() {
   g_print("Showing memory maps: %d!\n", get_selected_process_id());
 }
+/* void show_memory_maps() */
 
 void show_open_files() {
   g_print("Showing open files: %d!\n", get_selected_process_id());
 }
+/* void show_open_files() */
 
 void show_properties() {
   g_print("Showing properties: %d!\n", get_selected_process_id());
