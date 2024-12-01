@@ -1,0 +1,12 @@
+#!/bin/bash
+
+if [[ $# -ne 1 ]]; then
+  echo "error"
+  exit -1
+fi
+
+mkdir -p ./tmp
+
+lsof -p $1 | awk '$4 ~ /^[0-9]/' | awk '{print $4, $5, $9}' > ./tmp/f.txt
+
+exit 0

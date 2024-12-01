@@ -86,7 +86,7 @@ void init_processes(GtkBuilder *builder) {
 }
 /* void p_init_ui(GtkBuilder* builder) */
 
-void show_error_dialogue(const char* message, const char* header_message) {
+void show_error_dialog(const char* message, const char* header_message) {
   GtkWidget *dialog;
   dialog = gtk_message_dialog_new(NULL, GTK_DIALOG_MODAL, GTK_MESSAGE_ERROR,
                                   GTK_BUTTONS_OK, "%s", message);
@@ -95,9 +95,9 @@ void show_error_dialogue(const char* message, const char* header_message) {
   gtk_dialog_run(GTK_DIALOG(dialog));
   gtk_widget_destroy(dialog);
 }
-/* void show_error_dialogue() */
+/* void show_error_dialog() */
 
-void show_process_properties_dialogue(struct process *proc) {
+void show_process_properties_dialog(struct process *proc) {
   GError *error = NULL;
   GtkBuilder *builder = gtk_builder_new();
   if (gtk_builder_add_from_file(builder, "./process-properties.ui", &error) == 0) {
@@ -107,7 +107,7 @@ void show_process_properties_dialogue(struct process *proc) {
   }
 
   // Init the gui
-  GtkWidget *dialog = GTK_WIDGET(gtk_builder_get_object(builder, "properties_dialogue"));
+  GtkWidget *dialog = GTK_WIDGET(gtk_builder_get_object(builder, "properties_dialog"));
   GtkTreeStore *tree_store = GTK_TREE_STORE(gtk_builder_get_object(builder, "properties_tree_store"));
   GtkTreeViewColumn *property = GTK_TREE_VIEW_COLUMN(gtk_builder_get_object(builder, "process_property_col"));
   GtkTreeViewColumn *value    = GTK_TREE_VIEW_COLUMN(gtk_builder_get_object(builder, "process_value_col"));
@@ -175,12 +175,112 @@ void show_process_properties_dialogue(struct process *proc) {
   gtk_tree_store_append(tree_store, &iter, NULL);
   gtk_tree_store_set(tree_store, &iter, 0, "Start Date/Time", 1, val, -1);
 
-  // Run the gui as a modal dialogue
+  // Run the gui as a modal dialog
   gtk_dialog_run(GTK_DIALOG(dialog));
   gtk_widget_destroy(dialog);
   g_object_unref(builder);
 }
-/* void show_process_properties_dialogue() */
+/* void show_process_properties_dialog() */
+
+void show_open_files_dialog(int pid) {
+  GError *error = NULL;
+  GtkBuilder *builder = gtk_builder_new();
+  if (gtk_builder_add_from_file(builder, "./process-open-files.ui", &error) == 0) {
+    g_printerr("Error loading file: %s\n", error->message);
+    g_clear_error(&error);
+    return;
+  }
+  // Init the gui
+  GtkWidget *dialog = GTK_WIDGET(gtk_builder_get_object(builder, "open_files_dialog"));
+  GtkTreeStore *tree_store  = GTK_TREE_STORE(gtk_builder_get_object(builder, "open_files_tree_store"));
+  GtkTreeViewColumn *fds    = GTK_TREE_VIEW_COLUMN(gtk_builder_get_object(builder, "open_files_FD_col"));
+  GtkTreeViewColumn *mode   = GTK_TREE_VIEW_COLUMN(gtk_builder_get_object(builder, "open_files_mode_col"));
+  GtkTreeViewColumn *type   = GTK_TREE_VIEW_COLUMN(gtk_builder_get_object(builder, "open_files_type_col"));
+  GtkTreeViewColumn *object = GTK_TREE_VIEW_COLUMN(gtk_builder_get_object(builder, "open_files_object_col"));
+  GtkCellRenderer *fds_renderer    = GTK_CELL_RENDERER(gtk_builder_get_object(builder, "open_files_FD_col_renderer"));
+  GtkCellRenderer *mode_renderer   = GTK_CELL_RENDERER(gtk_builder_get_object(builder, "open_files_mode_col_renderer"));
+  GtkCellRenderer *type_renderer   = GTK_CELL_RENDERER(gtk_builder_get_object(builder, "open_files_type_col_renderer"));
+  GtkCellRenderer *object_renderer = GTK_CELL_RENDERER(gtk_builder_get_object(builder, "open_files_object_col_renderer"));
+  gtk_tree_view_column_add_attribute(fds, fds_renderer, "text", 0);
+  gtk_tree_view_column_add_attribute(mode, mode_renderer, "text", 1);
+  gtk_tree_view_column_add_attribute(type, type_renderer, "text", 2);
+  gtk_tree_view_column_add_attribute(object, object_renderer, "text", 3);
+  GtkWidget *close_button = GTK_WIDGET(gtk_builder_get_object(builder, "open_files_close_button"));
+  g_signal_connect_swapped(close_button, "clicked", G_CALLBACK(gtk_widget_destroy), dialog);
+  char title[32];
+  snprintf(title, sizeof(title), "Process %d Open Files", pid);
+  gtk_window_set_title(GTK_WINDOW(dialog), title);
+  gtk_window_set_position(GTK_WINDOW(dialog), GTK_WIN_POS_CENTER);
+
+  // Run the get_open_files script
+  pid_t id = fork();
+  if (id == -1) {
+    perror("fork");
+    return;
+  }
+  char flag[8];
+  snprintf(flag, sizeof(flag), "%d", pid);
+  if (id == 0) {
+    execlp("./scripts/get_open_files", "get_open_files", flag, NULL);
+    perror("execlp");
+    exit(-1);
+  } else {
+    waitpid(id, NULL, 0);
+  }
+  // Check for output in ./tmp/f.txt
+  FILE *file = fopen("./tmp/f.txt", "r");
+  if (!file) {
+    show_error_dialog("Internal file error!", "Open Files Error");
+    return;
+  } else {
+    fseek(file, 0, SEEK_END);
+    size_t size = ftell(file);
+    fseek(file, 0, 0);
+    if (size == 0) {
+      show_error_dialog("Permission denied\nor process already terminated!",
+                        "Open Files Error");
+      return;
+    }
+  }
+  // Parse output and populate tree_store
+  GtkTreeIter iter;
+  char line[512];
+  while (fgets(line, sizeof(line), file)) {
+    char fd_mode[16];
+    char type_buf[32];
+    char object_buf[256];
+    int fields_read = sscanf(line, "%s %s %s", fd_mode, type_buf, object_buf);
+    (void) fields_read;
+
+    char mode = fd_mode[strlen(fd_mode) - 1];
+    fd_mode[strlen(fd_mode) - 1] = '\0';
+    int fd = atoi(fd_mode);
+    
+    const char* mode_buf;
+    switch (mode) {
+      case 'r':
+        mode_buf = "Read Only";
+        break;
+      case 'w':
+        mode_buf = "Write Only";
+        break;
+      case 'u':
+        mode_buf = "Read & Write";
+        break;
+      default:
+        mode_buf = "N/A";
+    }
+    
+    gtk_tree_store_append(tree_store, &iter, NULL);
+    gtk_tree_store_set(tree_store, &iter, 0, fd, 1, mode_buf, 2, type_buf, 3, object_buf, -1);
+  }
+
+  // Run the gui as a modal dialog
+  gtk_dialog_run(GTK_DIALOG(dialog));
+  gtk_widget_destroy(dialog);
+  g_object_unref(builder);
+}
+/* void show_open_files_dialog(int pid) */
 
 /*
  * Executes the get_running_processes bash script based
@@ -410,7 +510,7 @@ void stop_process() {
     int status;
     waitpid(pid, &status, 0);
     if (status != 0) {
-      show_error_dialogue("\nInsufficient permissions,\nor process already terminated!",
+      show_error_dialog("\nInsufficient permissions,\nor process already terminated!",
                           "Stop Process Error");
     }
   }
@@ -442,7 +542,7 @@ void continue_process() {
     int status;
     waitpid(pid, &status, 0);
     if (status != 0) {
-      show_error_dialogue("\nInsufficient permissions,\nor process already terminated!",
+      show_error_dialog("\nInsufficient permissions,\nor process already terminated!",
                           "Continue Process Error");
     }
   }
@@ -474,7 +574,7 @@ void kill_process() {
     int status;
     waitpid(pid, &status, 0);
     if (status != 0) {
-      show_error_dialogue("\nInsufficient permissions,\nor process already terminated!",
+      show_error_dialog("\nInsufficient permissions,\nor process already terminated!",
                           "Kill Process Error");
     }
   }
@@ -488,7 +588,8 @@ void show_memory_maps() {
 /* void show_memory_maps() */
 
 void show_open_files() {
-  g_print("Showing open files: %d!\n", get_selected_process_id());
+  int pid = get_selected_process_id();
+  show_open_files_dialog(pid);
 }
 /* void show_open_files() */
 
@@ -506,9 +607,9 @@ void show_properties() {
     }
   }
   if (proc) {
-    show_process_properties_dialogue(proc);
+    show_process_properties_dialog(proc);
   } else {
-    show_error_dialogue("\nUnable to show properties!",
+    show_error_dialog("\nUnable to show properties!",
                         "Process Properties Error");
   }
 }
