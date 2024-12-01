@@ -282,6 +282,167 @@ void show_open_files_dialog(int pid) {
 }
 /* void show_open_files_dialog(int pid) */
 
+/* memory maps store:
+0  filename
+1  vm_start_raw
+2  vm_start
+3  vm_end_raw
+4  vm_end
+5  vm_size_raw
+6  vm_size
+7  flags
+8  vm_offset_raw
+9  vm_offset
+10 device_id
+11 inode
+*/
+void format_memory_size(size_t size_in_bytes, char *output_buffer, size_t buffer_size) {
+  char *units[] = {"B", "KiB", "MiB", "GiB", "TiB"};
+  int index = 0;
+  double size = (double)size_in_bytes;
+  while (size >= 1024 && index < 4) {
+    size /= 1024;
+    index++;
+  }
+  snprintf(output_buffer, buffer_size, "%.2f %s", size, units[index]);
+}
+void show_memory_maps_dialog(int pid) {
+  GError *error = NULL;
+  GtkBuilder *builder = gtk_builder_new();
+  if (gtk_builder_add_from_file(builder, "./process-memory-maps.ui", &error) == 0) {
+    g_printerr("Error loading file: %s\n", error->message);
+    g_clear_error(&error);
+    return;
+  }
+  // Init the gui
+  GtkWidget *dialog = GTK_WIDGET(gtk_builder_get_object(builder, "memory_maps_dialog"));
+  GtkTreeStore *tree_store = GTK_TREE_STORE(gtk_builder_get_object(builder, "memory_maps_tree_store"));
+  GtkTreeViewColumn *file_name_col = GTK_TREE_VIEW_COLUMN(gtk_builder_get_object(builder, "mm_filename_col"));
+  GtkTreeViewColumn *vm_start_col  = GTK_TREE_VIEW_COLUMN(gtk_builder_get_object(builder, "mm_vm_start_col"));
+  GtkTreeViewColumn *vm_end_col    = GTK_TREE_VIEW_COLUMN(gtk_builder_get_object(builder, "mm_vm_end_col"));
+  GtkTreeViewColumn *vm_size_col   = GTK_TREE_VIEW_COLUMN(gtk_builder_get_object(builder, "mm_vm_size_col"));
+  GtkTreeViewColumn *flags_col     = GTK_TREE_VIEW_COLUMN(gtk_builder_get_object(builder, "mm_flags_col"));
+  GtkTreeViewColumn *vm_offset_col = GTK_TREE_VIEW_COLUMN(gtk_builder_get_object(builder, "mm_vm_offset_col"));
+  GtkTreeViewColumn *device_id_col = GTK_TREE_VIEW_COLUMN(gtk_builder_get_object(builder, "mm_device_id_col"));
+  GtkTreeViewColumn *inode_col     = GTK_TREE_VIEW_COLUMN(gtk_builder_get_object(builder, "mm_inode_col"));
+  GtkCellRenderer *file_name_col_renderer = GTK_CELL_RENDERER(gtk_builder_get_object(builder, "mm_filename_col_renderer"));
+  GtkCellRenderer *vm_start_col_renderer  = GTK_CELL_RENDERER(gtk_builder_get_object(builder, "mm_vm_start_col_renderer"));
+  GtkCellRenderer *vm_end_col_renderer    = GTK_CELL_RENDERER(gtk_builder_get_object(builder, "mm_vm_end_col_renderer"));
+  GtkCellRenderer *vm_size_col_renderer   = GTK_CELL_RENDERER(gtk_builder_get_object(builder, "mm_vm_size_col_renderer"));
+  GtkCellRenderer *flags_col_renderer     = GTK_CELL_RENDERER(gtk_builder_get_object(builder, "mm_flags_col_renderer"));
+  GtkCellRenderer *vm_offset_col_renderer = GTK_CELL_RENDERER(gtk_builder_get_object(builder, "mm_vm_offset_col_renderer"));
+  GtkCellRenderer *device_id_col_renderer = GTK_CELL_RENDERER(gtk_builder_get_object(builder, "mm_device_id_col_renderer"));
+  GtkCellRenderer *inode_col_renderer     = GTK_CELL_RENDERER(gtk_builder_get_object(builder, "mm_inode_col_renderer"));
+  gtk_tree_view_column_add_attribute(file_name_col, file_name_col_renderer, "text", 0);
+  gtk_tree_view_column_add_attribute(vm_start_col, vm_start_col_renderer, "text", 2);
+  gtk_tree_view_column_add_attribute(vm_end_col, vm_end_col_renderer, "text", 4);
+  gtk_tree_view_column_add_attribute(vm_size_col, vm_size_col_renderer, "text", 6);
+  gtk_tree_view_column_add_attribute(flags_col, flags_col_renderer, "text", 7);
+  gtk_tree_view_column_add_attribute(vm_offset_col, vm_offset_col_renderer, "text", 9);
+  gtk_tree_view_column_add_attribute(device_id_col, device_id_col_renderer, "text", 10);
+  gtk_tree_view_column_add_attribute(inode_col, inode_col_renderer, "text", 11);
+  GtkWidget *close_button = GTK_WIDGET(gtk_builder_get_object(builder, "memory_maps_close_button"));
+  g_signal_connect_swapped(close_button, "clicked", G_CALLBACK(gtk_widget_destroy), dialog);
+  char title[32];
+  snprintf(title, sizeof(title), "Process %d Memory Maps", pid);
+  gtk_window_set_title(GTK_WINDOW(dialog), title);
+  gtk_window_set_position(GTK_WINDOW(dialog), GTK_WIN_POS_CENTER);
+
+  // Execlp
+  pid_t id = fork();
+  if (id == -1) {
+    perror("fork");
+    return;
+  }
+  char flag[8];
+  snprintf(flag, sizeof(flag), "%d", pid);
+  if (id == 0) {
+    execlp("./scripts/get_memory_maps", "get_memory_maps", flag, NULL);
+    perror("execlp");
+    exit(-1);
+  } else {
+    waitpid(id, NULL, 0);
+  }
+
+  // Open file
+  FILE *file = fopen("./tmp/m.txt", "r");
+  if (!file) {
+    show_error_dialog("Internal file error!", "Memory Maps Error");
+    return;
+  } else {
+    fseek(file, 0, SEEK_END);
+    size_t size = ftell(file);
+    fseek(file, 0, 0);
+    if (size == 0) {
+      show_error_dialog("Permission denied\nor process already terminated!",
+                        "Memory Maps Error");
+      return;
+    }
+  }
+
+  // Parse file
+  GtkTreeIter iter;
+  char line[1024];
+  while (fgets(line, sizeof(line), file)) {
+    char start_end_buf[64];
+    char flags_buf[16];
+    char offset_buf[24];
+    char device_buf[16];
+    char inode_buf[16];
+    char file_name_buf[256];
+    int fields_read = sscanf(line, "%s %s %s %s %s %s", start_end_buf, flags_buf, offset_buf,
+                                                        device_buf, inode_buf, file_name_buf);
+    (void) fields_read;
+
+    // Parse vm start/end
+    char vm_start[24];
+    char vm_end[24];
+    char *sep = strchr(start_end_buf, '-');
+    if (sep != NULL) {
+      size_t start_len = sep - start_end_buf;
+      if (start_len >= sizeof(vm_start)) {
+        start_len = sizeof(vm_start) - 1;
+      }
+      strncpy(vm_start, start_end_buf, start_len);
+      vm_start[start_len] = '\0';
+      strncpy(vm_end, sep + 1, sizeof(vm_end) - 1);
+      vm_end[sizeof(vm_end) - 1] = '\0';
+    } else {
+      strcpy(vm_start, "0");
+      strcpy(vm_end, "0");
+    }
+    size_t vm_start_val = (size_t)strtoull(vm_start, NULL, 16);
+    size_t vm_end_val = (size_t)strtoull(vm_end, NULL, 16);
+    // Parse vm size
+    size_t vm_size_val = vm_end_val - vm_start_val;
+    char vm_size[16];
+    format_memory_size(vm_size_val, vm_size, sizeof(vm_size));
+    // Parse vm offset
+    size_t vm_offset_val = (size_t)strtoull(offset_buf, NULL, 24);
+    // Parse inode
+    size_t inode_val = atoi(inode_buf);
+    
+    // Set row in the tree store
+    g_print("%s", line);
+    gtk_tree_store_append(tree_store, &iter, NULL);
+    gtk_tree_store_set(tree_store, &iter, 0, file_name_buf,
+                      1, vm_start_val, 2, vm_start,
+                      3, vm_end_val, 4, vm_end,
+                      5, vm_size_val, 6, vm_size,
+                      7, flags_buf,
+                      8, vm_offset_val, 9, offset_buf,
+                      10, device_buf,
+                      11, inode_val, -1);
+
+  }
+
+  // Run the gui as a modal dialog
+  gtk_dialog_run(GTK_DIALOG(dialog));
+  gtk_widget_destroy(dialog);
+  g_object_unref(builder);
+}
+/* void show_memory_maps_dialog(int pid) */
+
 /*
  * Executes the get_running_processes bash script based
  * on the current mode to refresh the file stored in ./tmp/
@@ -583,7 +744,9 @@ void kill_process() {
 /* void kill_process() */
 
 void show_memory_maps() {
-  g_print("Showing memory maps: %d!\n", get_selected_process_id());
+  int pid = get_selected_process_id();
+  g_print("Showing memory maps: %d!\n", pid);
+  show_memory_maps_dialog(pid);
 }
 /* void show_memory_maps() */
 

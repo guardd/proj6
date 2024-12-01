@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Generated with glade 3.40.0 -->
+<interface>
+  <requires lib="gtk+" version="3.24"/>
+  <object class="GtkTreeStore" id="memory_maps_tree_store">
+    <columns>
+      <!-- column-name filename -->
+      <column type="gchararray"/>
+      <!-- column-name vm_start_raw -->
+      <column type="gint64"/>
+      <!-- column-name vm_start -->
+      <column type="gchararray"/>
+      <!-- column-name vm_end_raw -->
+      <column type="gint64"/>
+      <!-- column-name vm_end -->
+      <column type="gchararray"/>
+      <!-- column-name vm_size_raw -->
+      <column type="gint64"/>
+      <!-- column-name vm_size -->
+      <column type="gchararray"/>
+      <!-- column-name flags -->
+      <column type="gchararray"/>
+      <!-- column-name vm_offset_raw -->
+      <column type="gint64"/>
+      <!-- column-name vm_offset -->
+      <column type="gchararray"/>
+      <!-- column-name device_id -->
+      <column type="gchararray"/>
+      <!-- column-name inode -->
+      <column type="gint64"/>
+    </columns>
+  </object>
+  <object class="GtkDialog" id="memory_maps_dialog">
+    <property name="can-focus">False</property>
+    <property name="default-width">800</property>
+    <property name="default-height">300</property>
+    <property name="type-hint">dialog</property>
+    <child internal-child="vbox">
+      <object class="GtkBox">
+        <property name="can-focus">False</property>
+        <property name="orientation">vertical</property>
+        <property name="spacing">2</property>
+        <child internal-child="action_area">
+          <object class="GtkButtonBox">
+            <property name="can-focus">False</property>
+            <property name="layout-style">end</property>
+            <child>
+              <object class="GtkButton" id="memory_maps_close_button">
+                <property name="label" translatable="yes">Close</property>
+                <property name="visible">True</property>
+                <property name="can-focus">True</property>
+                <property name="receives-default">True</property>
+              </object>
+              <packing>
+                <property name="expand">True</property>
+                <property name="fill">True</property>
+                <property name="position">0</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">False</property>
+            <property name="position">0</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkScrolledWindow">
+            <property name="visible">True</property>
+            <property name="can-focus">True</property>
+            <property name="hexpand">True</property>
+            <property name="vexpand">True</property>
+            <property name="shadow-type">in</property>
+            <child>
+              <object class="GtkTreeView" id="memory_maps_tree_view">
+                <property name="visible">True</property>
+                <property name="can-focus">True</property>
+                <property name="model">memory_maps_tree_store</property>
+                <property name="search-column">0</property>
+                <child internal-child="selection">
+                  <object class="GtkTreeSelection"/>
+                </child>
+                <child>
+                  <object class="GtkTreeViewColumn" id="mm_filename_col">
+                    <property name="resizable">True</property>
+                    <property name="sizing">autosize</property>
+                    <property name="title" translatable="yes">File Name</property>
+                    <property name="clickable">True</property>
+                    <property name="sort-column-id">0</property>
+                    <child>
+                      <object class="GtkCellRendererText" id="mm_filename_col_renderer"/>
+                    </child>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkTreeViewColumn" id="mm_vm_start_col">
+                    <property name="resizable">True</property>
+                    <property name="sizing">autosize</property>
+                    <property name="title" translatable="yes">VM Start</property>
+                    <property name="clickable">True</property>
+                    <property name="sort-column-id">1</property>
+                    <child>
+                      <object class="GtkCellRendererText" id="mm_vm_start_col_renderer"/>
+                    </child>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkTreeViewColumn" id="mm_vm_end_col">
+                    <property name="resizable">True</property>
+                    <property name="sizing">autosize</property>
+                    <property name="title" translatable="yes">VM End</property>
+                    <property name="clickable">True</property>
+                    <property name="sort-column-id">3</property>
+                    <child>
+                      <object class="GtkCellRendererText" id="mm_vm_end_col_renderer"/>
+                    </child>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkTreeViewColumn" id="mm_vm_size_col">
+                    <property name="resizable">True</property>
+                    <property name="sizing">autosize</property>
+                    <property name="title" translatable="yes">VM Size</property>
+                    <property name="clickable">True</property>
+                    <property name="sort-column-id">5</property>
+                    <child>
+                      <object class="GtkCellRendererText" id="mm_vm_size_col_renderer"/>
+                    </child>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkTreeViewColumn" id="mm_flags_col">
+                    <property name="resizable">True</property>
+                    <property name="sizing">autosize</property>
+                    <property name="title" translatable="yes">Flags</property>
+                    <property name="clickable">True</property>
+                    <property name="sort-column-id">7</property>
+                    <child>
+                      <object class="GtkCellRendererText" id="mm_flags_col_renderer"/>
+                    </child>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkTreeViewColumn" id="mm_vm_offset_col">
+                    <property name="resizable">True</property>
+                    <property name="sizing">autosize</property>
+                    <property name="title" translatable="yes">VM Offset</property>
+                    <property name="clickable">True</property>
+                    <property name="sort-column-id">8</property>
+                    <child>
+                      <object class="GtkCellRendererText" id="mm_vm_offset_col_renderer"/>
+                    </child>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkTreeViewColumn" id="mm_device_id_col">
+                    <property name="resizable">True</property>
+                    <property name="sizing">autosize</property>
+                    <property name="title" translatable="yes">Device ID</property>
+                    <property name="clickable">True</property>
+                    <property name="sort-column-id">10</property>
+                    <child>
+                      <object class="GtkCellRendererText" id="mm_device_id_col_renderer"/>
+                    </child>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkTreeViewColumn" id="mm_inode_col">
+                    <property name="resizable">True</property>
+                    <property name="sizing">autosize</property>
+                    <property name="title" translatable="yes">Inode</property>
+                    <property name="clickable">True</property>
+                    <property name="sort-column-id">11</property>
+                    <child>
+                      <object class="GtkCellRendererText" id="mm_inode_col_renderer"/>
+                    </child>
+                  </object>
+                </child>
+              </object>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="position">1</property>
+          </packing>
+        </child>
+      </object>
+    </child>
+  </object>
+</interface>

@@ -68,9 +68,3 @@ void on_process_actions_button_press(GtkWidget *tree_view, GdkEventButton *event
 void kill_process();
 
 #endif // PROCESSES_H
-
-/*
- * FOR FUTURE REFERENCE:
- * cat /proc/<pid>/maps outputs the info needed for memory maps
- * ls -l /proc/<pid>/fd outputs the info needed for open files
- */
