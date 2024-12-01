@@ -67,15 +67,15 @@ int main(int argc, char **argv) {
 
   /* Init builder from task-manager.ui */
   builder = gtk_builder_new();
-  if (gtk_builder_add_from_file(builder, "task-manager.ui", &error) == 0) {
+  if (gtk_builder_add_from_file(builder, "./task-manager.ui", &error) == 0) {
     g_printerr("Error loading file: %s\n", error->message);
     g_clear_error(&error);
     return -1;
   }
 
+  /* Init the UI elements for each page */
   init_system_info(builder);
-  /* Init the UI elements for the processes page */
-  p_init_ui(builder);
+  init_processes(builder);
   init_resources(builder);
 
   /* Connect signal handlers to stack (page) switches */

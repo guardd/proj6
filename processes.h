@@ -57,7 +57,7 @@ extern char process_display_mode; // 'a' for all, 'u' for user
 extern char process_display_view; // 't' for table, 'T' for Tree
 
 /* Function headers */
-void p_init_ui(GtkBuilder *builder);
+void init_processes(GtkBuilder *builder);
 void show_processes_view_menu(GtkBuilder *builder);
 void refresh_current_processes(char mode);
 void refresh_process_file(char mode);

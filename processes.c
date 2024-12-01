@@ -59,7 +59,7 @@ char* get_process_state_string(p_state state) {
 /*
  * Initializes all the processes.h Gtk UI globals from a builder
  */
-void p_init_ui(GtkBuilder *builder) {
+void init_processes(GtkBuilder *builder) {
   // Init the globals in processes.h from the GtkBuilder in main
   p_tree_store = GTK_TREE_STORE(gtk_builder_get_object(builder, "p_tree_store"));
   p_tree_view  = GTK_TREE_VIEW(gtk_builder_get_object(builder, "p_tree_view"));
@@ -80,11 +80,107 @@ void p_init_ui(GtkBuilder *builder) {
   // Connect the column elements with their respective renderers
   gtk_tree_view_column_add_attribute(p_name_col, p_name_col_renderer, "text", 0);
   gtk_tree_view_column_add_attribute(p_status_col, p_status_col_renderer, "text", 1);
-  gtk_tree_view_column_add_attribute(p_cpu_percent_col, p_cpu_percent_col_renderer, "text", 2);
-  gtk_tree_view_column_add_attribute(p_id_col, p_id_col_renderer, "text", 3);
-  gtk_tree_view_column_add_attribute(p_memory_col, p_memory_col_renderer, "text", 4);
+  gtk_tree_view_column_add_attribute(p_cpu_percent_col, p_cpu_percent_col_renderer, "text", 3);
+  gtk_tree_view_column_add_attribute(p_id_col, p_id_col_renderer, "text", 4);
+  gtk_tree_view_column_add_attribute(p_memory_col, p_memory_col_renderer, "text", 6);
 }
 /* void p_init_ui(GtkBuilder* builder) */
+
+void show_error_dialogue(const char* message, const char* header_message) {
+  GtkWidget *dialog;
+  dialog = gtk_message_dialog_new(NULL, GTK_DIALOG_MODAL, GTK_MESSAGE_ERROR,
+                                  GTK_BUTTONS_OK, "%s", message);
+  gtk_window_set_title(GTK_WINDOW(dialog), header_message);
+  gtk_window_set_position(GTK_WINDOW(dialog), GTK_WIN_POS_CENTER);
+  gtk_dialog_run(GTK_DIALOG(dialog));
+  gtk_widget_destroy(dialog);
+}
+/* void show_error_dialogue() */
+
+void show_process_properties_dialogue(struct process *proc) {
+  GError *error = NULL;
+  GtkBuilder *builder = gtk_builder_new();
+  if (gtk_builder_add_from_file(builder, "./process-properties.ui", &error) == 0) {
+    g_printerr("Error loading file: %s\n", error->message);
+    g_clear_error(&error);
+    return;
+  }
+
+  // Init the gui
+  GtkWidget *dialog = GTK_WIDGET(gtk_builder_get_object(builder, "properties_dialogue"));
+  GtkTreeStore *tree_store = GTK_TREE_STORE(gtk_builder_get_object(builder, "properties_tree_store"));
+  GtkTreeViewColumn *property = GTK_TREE_VIEW_COLUMN(gtk_builder_get_object(builder, "process_property_col"));
+  GtkTreeViewColumn *value    = GTK_TREE_VIEW_COLUMN(gtk_builder_get_object(builder, "process_value_col"));
+  GtkCellRenderer *property_renderer = GTK_CELL_RENDERER(gtk_builder_get_object(builder, "property_col_renderer"));
+  GtkCellRenderer *value_renderer    = GTK_CELL_RENDERER(gtk_builder_get_object(builder, "value_col_renderer"));
+  gtk_tree_view_column_add_attribute(property, property_renderer, "text", 0);
+  gtk_tree_view_column_add_attribute(value, value_renderer, "text", 1);
+  GtkWidget *close_button = GTK_WIDGET(gtk_builder_get_object(builder, "properties_close_button"));
+  g_signal_connect_swapped(close_button, "clicked", G_CALLBACK(gtk_widget_destroy), dialog);
+  
+  if (proc) {
+    char title[64];
+    snprintf(title, sizeof(title), "Process %d Properties", proc->pid);
+    gtk_window_set_title(GTK_WINDOW(dialog), title);
+    gtk_window_set_position(GTK_WINDOW(dialog), GTK_WIN_POS_CENTER);
+  } else {
+    return;
+  }
+
+  // Init the table
+  GtkTreeIter iter;
+  char val[64];
+  // Name
+  snprintf(val, sizeof(val), "%s", proc->name);
+  gtk_tree_store_append(tree_store, &iter, NULL);
+  gtk_tree_store_set(tree_store, &iter, 0, "Process Name", 1, val, -1);
+  // User
+  snprintf(val, sizeof(val), "%s", proc->user);
+  gtk_tree_store_append(tree_store, &iter, NULL);
+  gtk_tree_store_set(tree_store, &iter, 0, "User", 1, val, -1);
+  // PID
+  snprintf(val, sizeof(val), "%d", proc->pid);
+  gtk_tree_store_append(tree_store, &iter, NULL);
+  gtk_tree_store_set(tree_store, &iter, 0, "PID", 1, val, -1);
+  // PPID
+  snprintf(val, sizeof(val), "%d", proc->ppid);
+  gtk_tree_store_append(tree_store, &iter, NULL);
+  gtk_tree_store_set(tree_store, &iter, 0, "Parent PID", 1, val, -1);
+  // State
+  snprintf(val, sizeof(val), "%s", get_process_state_string(proc->state));
+  gtk_tree_store_append(tree_store, &iter, NULL);
+  gtk_tree_store_set(tree_store, &iter, 0, "State", 1, val, -1);
+  // VSS
+  snprintf(val, sizeof(val), "%.2f MiB", (float) proc->virtual_memory / (1024.0));
+  gtk_tree_store_append(tree_store, &iter, NULL);
+  gtk_tree_store_set(tree_store, &iter, 0, "Virtual Memory", 1, val, -1);
+  // RSS
+  snprintf(val, sizeof(val), "%.2f MiB", (float) proc->resident_memory / (1024.0));
+  gtk_tree_store_append(tree_store, &iter, NULL);
+  gtk_tree_store_set(tree_store, &iter, 0, "Resident Memory", 1, val, -1);
+  // CPU Time
+  snprintf(val, sizeof(val), "%s", proc->cpu_time);
+  gtk_tree_store_append(tree_store, &iter, NULL);
+  gtk_tree_store_set(tree_store, &iter, 0, "CPU Time", 1, val, -1);
+  // %CPU
+  snprintf(val, sizeof(val), "%.2f%%", proc->percent_cpu);
+  gtk_tree_store_append(tree_store, &iter, NULL);
+  gtk_tree_store_set(tree_store, &iter, 0, "\% CPU", 1, val, -1);
+  // %MEM
+  snprintf(val, sizeof(val), "%.2f%%", proc->percent_mem);
+  gtk_tree_store_append(tree_store, &iter, NULL);
+  gtk_tree_store_set(tree_store, &iter, 0, "\% Memory", 1, val, -1);
+  // Start Date/Time
+  snprintf(val, sizeof(val), "%s", proc->start_date);
+  gtk_tree_store_append(tree_store, &iter, NULL);
+  gtk_tree_store_set(tree_store, &iter, 0, "Start Date/Time", 1, val, -1);
+
+  // Run the gui as a modal dialogue
+  gtk_dialog_run(GTK_DIALOG(dialog));
+  gtk_widget_destroy(dialog);
+  g_object_unref(builder);
+}
+/* void show_process_properties_dialogue() */
 
 /*
  * Executes the get_running_processes bash script based
@@ -215,35 +311,32 @@ void display_processes() {
     while (current_processes[i] != NULL) {
       process *proc = current_processes[i];
       char perc_cpu[16];
-      char proc_id[16];
       char proc_mem[16];
       snprintf(perc_cpu, sizeof(perc_cpu), "%.2f%%", proc->percent_cpu);
-      snprintf(proc_id, sizeof(perc_cpu), "%d", proc->pid);
       snprintf(proc_mem, sizeof(perc_cpu), "%.2f MiB", (float) proc->resident_memory / (1024.0));
       gtk_tree_store_append(p_tree_store, &iter, NULL);
       gtk_tree_store_set(p_tree_store, &iter, 0, proc->name,
                                               1, get_process_state_string(proc->state),
-                                              2, perc_cpu,
-                                              3, proc_id,
-                                              4, proc_mem, -1);
+                                              2, proc->percent_cpu, // raw data (in the store)
+                                              3, perc_cpu, // formatted data (for the tree_view)
+                                              4, proc->pid,
+                                              5, proc->resident_memory, // raw data (in the store)
+                                              6, proc_mem, -1); // formatted data (for the tree_view)
       i++;
     }
   } else if (process_display_view == 'T') { // Tree view
-    // Map from PID to Gtk Iters in a hash table
+    // Map from pid to iters in a hash table
     GHashTable *pid_to_iter = g_hash_table_new(g_int_hash, g_int_equal);
     int i = 0;
     while (current_processes[i] != NULL) {
       process *proc = current_processes[i];
       char perc_cpu[16];
-      char proc_id[16];
       char proc_mem[16];
       snprintf(perc_cpu, sizeof(perc_cpu), "%.2f%%", proc->percent_cpu);
-      snprintf(proc_id, sizeof(proc_id), "%d", proc->pid);
       snprintf(proc_mem, sizeof(proc_mem), "%.2f MiB", (float)proc->resident_memory / (1024.0));
 
       GtkTreeIter *parent = NULL;
-
-      // If the process has a parent, find its GtkTreeIter in the hash table
+      // If the process has a parent, find its iter in the hash table
       if (proc->ppid != 0) { // Child process
         GtkTreeIter *parent_lookup = g_hash_table_lookup(pid_to_iter, &proc->ppid);
         if (parent_lookup) {
@@ -251,20 +344,19 @@ void display_processes() {
         }
       }
 
-      // Append the current process to the TreeStore
+      // Append the current process to the tree_store
       GtkTreeIter *current_iter = g_new(GtkTreeIter, 1);
-      gtk_tree_store_append(p_tree_store, current_iter, parent); // NULL parent at root
+      gtk_tree_store_append(p_tree_store, current_iter, parent);
       gtk_tree_store_set(p_tree_store, current_iter,
                           0, proc->name,
                           1, get_process_state_string(proc->state),
-                          2, perc_cpu,
-                          3, proc_id,
-                          4, proc_mem,
-                          -1);
+                          2, proc->percent_cpu, // raw
+                          3, perc_cpu, // formatted
+                          4, proc->pid,
+                          5, proc->resident_memory, // raw
+                          6, proc_mem, -1); // formatted
 
-      // Add the current processes iter to the hash table
       g_hash_table_insert(pid_to_iter, &proc->pid, current_iter);
-
       i++;
     }
     g_hash_table_destroy(pid_to_iter);
@@ -279,25 +371,16 @@ void display_processes() {
 int get_selected_process_id() {
   GtkTreeIter iter;
   GtkTreeModel *model;
-  gchar *process_name, *process_state, *process_cpu, *process_id, *process_mem;
+  int pid;
 
   // Retrieve the selected row from p_selection
   if (gtk_tree_selection_get_selected(p_selection, &model, &iter)) {
       // Extract data from the selected row
-      gtk_tree_model_get(model, &iter, 0, &process_name, 1, &process_state,
-                         2, &process_cpu, 3, &process_id, 4, &process_mem, -1);
+      gtk_tree_model_get(model, &iter, 4, &pid, -1);
   } else {
     printf("Nothing is selected!\n");
     return -1;
   }
-  int pid = atoi((char*) process_id);
-
-  // Free the extracted strings
-  g_free(process_name);
-  g_free(process_state);
-  g_free(process_cpu);
-  g_free(process_id);
-  g_free(process_mem);
 
   return pid;
 }
@@ -327,8 +410,8 @@ void stop_process() {
     int status;
     waitpid(pid, &status, 0);
     if (status != 0) {
-      // TODO (make a custom dialogue box)
-      g_print("Error! Insufficient permissions, or process already ended!\n");
+      show_error_dialogue("\nInsufficient permissions,\nor process already terminated!",
+                          "Stop Process Error");
     }
   }
   display_processes();
@@ -359,8 +442,8 @@ void continue_process() {
     int status;
     waitpid(pid, &status, 0);
     if (status != 0) {
-      // TODO (make a custom dialogue box)
-      g_print("Error! Insufficient permissions, or process already ended!\n");
+      show_error_dialogue("\nInsufficient permissions,\nor process already terminated!",
+                          "Continue Process Error");
     }
   }
   display_processes();
@@ -391,8 +474,8 @@ void kill_process() {
     int status;
     waitpid(pid, &status, 0);
     if (status != 0) {
-      // TODO (make a custom dialogue box)
-      g_print("Error! Insufficient permissions, or process already ended!\n");
+      show_error_dialogue("\nInsufficient permissions,\nor process already terminated!",
+                          "Kill Process Error");
     }
   }
   display_processes();
@@ -410,7 +493,24 @@ void show_open_files() {
 /* void show_open_files() */
 
 void show_properties() {
-  g_print("Showing properties: %d!\n", get_selected_process_id());
+  int pid = get_selected_process_id();
+  process* proc;
+  int i = 0;
+
+  while(current_processes[i] != NULL) {
+    if (current_processes[i]->pid == pid) {
+      proc = current_processes[i];
+      break;
+    } else {
+      i++;
+    }
+  }
+  if (proc) {
+    show_process_properties_dialogue(proc);
+  } else {
+    show_error_dialogue("\nUnable to show properties!",
+                        "Process Properties Error");
+  }
 }
 /* Functions for the process specific functions */
 

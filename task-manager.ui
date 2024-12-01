@@ -8,10 +8,14 @@
       <column type="gchararray"/>
       <!-- column-name p_status -->
       <column type="gchararray"/>
-      <!-- column-name p_id -->
-      <column type="gchararray"/>
+      <!-- column-name p_cpu_percent_raw -->
+      <column type="gfloat"/>
       <!-- column-name p_cpu_percent -->
       <column type="gchararray"/>
+      <!-- column-name p_id -->
+      <column type="gint"/>
+      <!-- column-name p_memory_raw -->
+      <column type="gint"/>
       <!-- column-name p_memory -->
       <column type="gchararray"/>
     </columns>
@@ -112,12 +116,13 @@
                 </child>
                 <child>
                   <object class="GtkFrame">
-                    <property name="visible">True</property>
-                    <property name="can-focus">False</property>
                     <property name="width-request">550</property>
                     <property name="height-request">250</property>
+                    <property name="visible">True</property>
+                    <property name="can-focus">False</property>
                     <property name="label">System Information</property>
                     <child>
+                      <!-- n-columns=3 n-rows=5 -->
                       <object class="GtkGrid">
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
@@ -127,8 +132,6 @@
                         <property name="margin-bottom">12</property>
                         <property name="row-spacing">10</property>
                         <property name="column-spacing">10</property>
-                        
-                        <!-- OS Release -->
                         <child>
                           <object class="GtkLabel">
                             <property name="visible">True</property>
@@ -153,8 +156,6 @@
                             <property name="top-attach">0</property>
                           </packing>
                         </child>
-                        
-                        <!-- Kernel Version -->
                         <child>
                           <object class="GtkLabel">
                             <property name="visible">True</property>
@@ -179,8 +180,6 @@
                             <property name="top-attach">1</property>
                           </packing>
                         </child>
-                        
-                        <!-- Memory -->
                         <child>
                           <object class="GtkLabel">
                             <property name="visible">True</property>
@@ -205,8 +204,6 @@
                             <property name="top-attach">2</property>
                           </packing>
                         </child>
-                        
-                        <!-- Processor -->
                         <child>
                           <object class="GtkLabel">
                             <property name="visible">True</property>
@@ -231,8 +228,6 @@
                             <property name="top-attach">3</property>
                           </packing>
                         </child>
-                        
-                        <!-- Disk Space -->
                         <child>
                           <object class="GtkLabel">
                             <property name="visible">True</property>
@@ -256,6 +251,21 @@
                             <property name="left-attach">1</property>
                             <property name="top-attach">4</property>
                           </packing>
+                        </child>
+                        <child>
+                          <placeholder/>
+                        </child>
+                        <child>
+                          <placeholder/>
+                        </child>
+                        <child>
+                          <placeholder/>
+                        </child>
+                        <child>
+                          <placeholder/>
+                        </child>
+                        <child>
+                          <placeholder/>
                         </child>
                       </object>
                     </child>
@@ -315,7 +325,11 @@
                             </child>
                             <child>
                               <object class="GtkTreeViewColumn" id="p_name_col">
+                                <property name="resizable">True</property>
+                                <property name="sizing">autosize</property>
                                 <property name="title" translatable="yes">Process Name</property>
+                                <property name="clickable">True</property>
+                                <property name="sort-column-id">0</property>
                                 <child>
                                   <object class="GtkCellRendererText" id="p_name_col_renderer"/>
                                 </child>
@@ -323,7 +337,11 @@
                             </child>
                             <child>
                               <object class="GtkTreeViewColumn" id="p_status_col">
+                                <property name="resizable">True</property>
+                                <property name="sizing">autosize</property>
                                 <property name="title" translatable="yes">Status</property>
+                                <property name="clickable">True</property>
+                                <property name="sort-column-id">1</property>
                                 <child>
                                   <object class="GtkCellRendererText" id="p_status_col_renderer"/>
                                 </child>
@@ -331,7 +349,11 @@
                             </child>
                             <child>
                               <object class="GtkTreeViewColumn" id="p_cpu_percent_col">
+                                <property name="resizable">True</property>
+                                <property name="sizing">autosize</property>
                                 <property name="title" translatable="yes">% CPU</property>
+                                <property name="clickable">True</property>
+                                <property name="sort-column-id">2</property>
                                 <child>
                                   <object class="GtkCellRendererText" id="p_cpu_percent_col_renderer"/>
                                 </child>
@@ -339,7 +361,11 @@
                             </child>
                             <child>
                               <object class="GtkTreeViewColumn" id="p_id_col">
+                                <property name="resizable">True</property>
+                                <property name="sizing">autosize</property>
                                 <property name="title" translatable="yes">ID</property>
+                                <property name="clickable">True</property>
+                                <property name="sort-column-id">4</property>
                                 <child>
                                   <object class="GtkCellRendererText" id="p_id_col_renderer"/>
                                 </child>
@@ -347,7 +373,11 @@
                             </child>
                             <child>
                               <object class="GtkTreeViewColumn" id="p_memory_col">
+                                <property name="resizable">True</property>
+                                <property name="sizing">autosize</property>
                                 <property name="title" translatable="yes">Memory</property>
+                                <property name="clickable">True</property>
+                                <property name="sort-column-id">5</property>
                                 <child>
                                   <object class="GtkCellRendererText" id="p_memory_col_renderer"/>
                                 </child>
@@ -372,11 +402,11 @@
                 <property name="can-focus">False</property>
                 <child>
                   <object class="GtkFrame">
+                    <property name="width-request">550</property>
+                    <property name="height-request">200</property>
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
                     <property name="label">CPU History</property>
-                    <property name="width-request">550</property>
-                    <property name="height-request">200</property>
                     <child>
                       <object class="GtkDrawingArea" id="cpu_graph">
                         <property name="visible">True</property>
@@ -391,11 +421,11 @@
                 </child>
                 <child>
                   <object class="GtkFrame">
+                    <property name="width-request">550</property>
+                    <property name="height-request">200</property>
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
                     <property name="label">Memory and Swap History</property>
-                    <property name="width-request">550</property>
-                    <property name="height-request">200</property>
                     <child>
                       <object class="GtkDrawingArea" id="memory_graph">
                         <property name="visible">True</property>
@@ -410,11 +440,11 @@
                 </child>
                 <child>
                   <object class="GtkFrame">
+                    <property name="width-request">550</property>
+                    <property name="height-request">200</property>
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
                     <property name="label">Network History</property>
-                    <property name="width-request">550</property>
-                    <property name="height-request">200</property>
                     <child>
                       <object class="GtkDrawingArea" id="network_graph">
                         <property name="visible">True</property>
