@@ -9,27 +9,6 @@
 GtkBuilder *builder;
 
 /*
- * Some dummy functions to showcase button signal handling
- */
-void print_system() {
-  update_system_info();
-  g_print("System Button has been clicked!\n");
-}
-
-void clear_tree_store() {
-  gtk_tree_store_clear(p_tree_store); // temp -- remove later
-}
-
-void print_resources() {
-  g_print("Resources Button has been clicked!\n");
-}
-
-void print_file_systems() {
-  g_print("File Systems Button has been clicked!\n");
-}
-/* Dummy functions */
-
-/*
  * Callback function for when the page switches to any 1 of the 4
  */
 void on_stack_switched(GtkStack *stack) {
@@ -50,7 +29,7 @@ void on_stack_switched(GtkStack *stack) {
     // Update the menu_bar to have the 'Resources' options
   } else if (strcmp(visible_child_name, "File Systems") == 0) {
     // Update the menu_bar to have the 'File Systems' options
-    // TODO
+    refresh_file_systems();
   }
 }
 
@@ -77,6 +56,7 @@ int main(int argc, char **argv) {
   init_system_info(builder);
   init_processes(builder);
   init_resources(builder);
+  init_file_systems(builder);
 
   /* Connect signal handlers to stack (page) switches */
   GtkStack *stack = GTK_STACK(gtk_builder_get_object(builder, "stack"));
@@ -87,15 +67,6 @@ int main(int argc, char **argv) {
   g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
   g_signal_connect(window, "destroy", G_CALLBACK(cleanup_system_info), NULL);
   g_signal_connect(window, "destroy", G_CALLBACK(cleanup_resources), NULL);
-
-  button = gtk_builder_get_object(builder, "system_button");
-  g_signal_connect(button, "clicked", G_CALLBACK(print_system), NULL);
-
-  button = gtk_builder_get_object(builder, "resources_button");
-  g_signal_connect(button, "clicked", G_CALLBACK(print_resources), NULL);
-
-  button = gtk_builder_get_object(builder, "file_systems_button");
-  g_signal_connect(button, "clicked", G_CALLBACK(print_file_systems), NULL);
 
   button = gtk_builder_get_object(builder, "p_end_process_button");
   g_signal_connect(button, "clicked", G_CALLBACK(kill_process), NULL);

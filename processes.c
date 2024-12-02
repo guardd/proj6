@@ -84,7 +84,7 @@ void init_processes(GtkBuilder *builder) {
   gtk_tree_view_column_add_attribute(p_id_col, p_id_col_renderer, "text", 4);
   gtk_tree_view_column_add_attribute(p_memory_col, p_memory_col_renderer, "text", 6);
 }
-/* void p_init_ui(GtkBuilder* builder) */
+/* void init_processes(GtkBuilder* builder) */
 
 void show_error_dialog(const char* message, const char* header_message) {
   GtkWidget *dialog;
@@ -274,7 +274,7 @@ void show_open_files_dialog(int pid) {
     gtk_tree_store_append(tree_store, &iter, NULL);
     gtk_tree_store_set(tree_store, &iter, 0, fd, 1, mode_buf, 2, type_buf, 3, object_buf, -1);
   }
-
+  fclose(file);
   // Run the gui as a modal dialog
   gtk_dialog_run(GTK_DIALOG(dialog));
   gtk_widget_destroy(dialog);
@@ -423,7 +423,7 @@ void show_memory_maps_dialog(int pid) {
     size_t inode_val = atoi(inode_buf);
     
     // Set row in the tree store
-    g_print("%s", line);
+    // g_print("%s", line);
     gtk_tree_store_append(tree_store, &iter, NULL);
     gtk_tree_store_set(tree_store, &iter, 0, file_name_buf,
                       1, vm_start_val, 2, vm_start,
@@ -435,7 +435,7 @@ void show_memory_maps_dialog(int pid) {
                       11, inode_val, -1);
 
   }
-
+  fclose(file);
   // Run the gui as a modal dialog
   gtk_dialog_run(GTK_DIALOG(dialog));
   gtk_widget_destroy(dialog);

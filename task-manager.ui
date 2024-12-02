@@ -2,6 +2,30 @@
 <!-- Generated with glade 3.40.0 -->
 <interface>
   <requires lib="gtk+" version="3.24"/>
+  <object class="GtkTreeStore" id="fs_tree_store">
+    <columns>
+      <!-- column-name file_system -->
+      <column type="gchararray"/>
+      <!-- column-name mount -->
+      <column type="gchararray"/>
+      <!-- column-name total_raw -->
+      <column type="gint64"/>
+      <!-- column-name total -->
+      <column type="gchararray"/>
+      <!-- column-name used_raw -->
+      <column type="gint64"/>
+      <!-- column-name used -->
+      <column type="gchararray"/>
+      <!-- column-name available_raw -->
+      <column type="gint64"/>
+      <!-- column-name available -->
+      <column type="gchararray"/>
+      <!-- column-name percent_used_raw -->
+      <column type="gdouble"/>
+      <!-- column-name percent_used -->
+      <column type="gchararray"/>
+    </columns>
+  </object>
   <object class="GtkTreeStore" id="p_tree_store">
     <columns>
       <!-- column-name p_name -->
@@ -120,6 +144,7 @@
                     <property name="height-request">250</property>
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
+                    <property name="label-xalign">0</property>
                     <property name="label">System Information</property>
                     <child>
                       <!-- n-columns=3 n-rows=5 -->
@@ -406,6 +431,7 @@
                     <property name="height-request">200</property>
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
+                    <property name="label-xalign">0</property>
                     <property name="label">CPU History</property>
                     <child>
                       <object class="GtkDrawingArea" id="cpu_graph">
@@ -421,11 +447,12 @@
                 </child>
                 <child>
                   <object class="GtkFrame">
+                    <property name="label">Memory and Swap History</property>
                     <property name="width-request">550</property>
                     <property name="height-request">200</property>
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
-                    <property name="label">Memory and Swap History</property>
+                    <property name="label-xalign">0</property>
                     <child>
                       <object class="GtkDrawingArea" id="memory_graph">
                         <property name="visible">True</property>
@@ -445,6 +472,7 @@
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
                     <property name="label">Network History</property>
+                    <property name="label-xalign">0</property>
                     <child>
                       <object class="GtkDrawingArea" id="network_graph">
                         <property name="visible">True</property>
@@ -469,14 +497,103 @@
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
                 <child>
-                  <object class="GtkButton" id="file_systems_button">
-                    <property name="label" translatable="yes">File Systems Button</property>
-                    <property name="width-request">200</property>
-                    <property name="height-request">30</property>
+                  <object class="GtkScrolledWindow">
+                    <property name="width-request">600</property>
+                    <property name="height-request">700</property>
                     <property name="visible">True</property>
                     <property name="can-focus">True</property>
-                    <property name="receives-default">True</property>
+                    <property name="hexpand">True</property>
+                    <property name="vexpand">True</property>
                     <property name="border-width">5</property>
+                    <property name="shadow-type">in</property>
+                    <child>
+                      <object class="GtkViewport">
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <child>
+                          <object class="GtkTreeView" id="fs_tree_view">
+                            <property name="visible">True</property>
+                            <property name="can-focus">True</property>
+                            <property name="model">fs_tree_store</property>
+                            <child internal-child="selection">
+                              <object class="GtkTreeSelection" id="fs_selection"/>
+                            </child>
+                            <child>
+                              <object class="GtkTreeViewColumn" id="file_system_col">
+                                <property name="resizable">True</property>
+                                <property name="sizing">autosize</property>
+                                <property name="title" translatable="yes">File System</property>
+                                <property name="clickable">True</property>
+                                <property name="sort-column-id">0</property>
+                                <child>
+                                  <object class="GtkCellRendererText" id="file_system_col_renderer"/>
+                                </child>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkTreeViewColumn" id="total_col">
+                                <property name="resizable">True</property>
+                                <property name="sizing">autosize</property>
+                                <property name="title" translatable="yes">Total</property>
+                                <property name="clickable">True</property>
+                                <property name="sort-column-id">2</property>
+                                <child>
+                                  <object class="GtkCellRendererText" id="total_col_renderer"/>
+                                </child>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkTreeViewColumn" id="used_col">
+                                <property name="resizable">True</property>
+                                <property name="sizing">autosize</property>
+                                <property name="title" translatable="yes">Used</property>
+                                <property name="clickable">True</property>
+                                <property name="sort-column-id">4</property>
+                                <child>
+                                  <object class="GtkCellRendererText" id="used_col_renderer"/>
+                                </child>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkTreeViewColumn" id="available_col">
+                                <property name="resizable">True</property>
+                                <property name="sizing">autosize</property>
+                                <property name="title" translatable="yes">Avail</property>
+                                <property name="clickable">True</property>
+                                <property name="sort-column-id">6</property>
+                                <child>
+                                  <object class="GtkCellRendererText" id="available_col_renderer"/>
+                                </child>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkTreeViewColumn" id="percent_used_col">
+                                <property name="resizable">True</property>
+                                <property name="sizing">autosize</property>
+                                <property name="title" translatable="yes">% Used</property>
+                                <property name="clickable">True</property>
+                                <property name="sort-column-id">8</property>
+                                <child>
+                                  <object class="GtkCellRendererProgress" id="percent_used_prog_renderer"/>
+                                </child>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkTreeViewColumn" id="mount_col">
+                                <property name="resizable">True</property>
+                                <property name="sizing">autosize</property>
+                                <property name="title" translatable="yes">Mount</property>
+                                <property name="clickable">True</property>
+                                <property name="sort-column-id">1</property>
+                                <child>
+                                  <object class="GtkCellRendererText" id="mount_col_renderer"/>
+                                </child>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
                   </object>
                 </child>
               </object>
